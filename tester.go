@@ -1,3 +1,4 @@
+/*
 package main
 
 import (
@@ -34,19 +35,7 @@ type Daytime struct {
 func main() {
 
 	url := "http://localhost:8080/schedules"
-	/*
-		day1 := Daytime{
-			day:       1,
-			timestart: time.Now(),
-			timeend:   time.Now(),
-		}
-
-		day2 := Daytime{
-			day:       5,
-			timestart: time.Now(),
-			timeend:   time.Now(),
-		}
-	*/
+	
 	schedule := Schedule{
 		Subject: "AKE",
 		Room:    "7601",
@@ -91,3 +80,4 @@ func main() {
 	fmt.Println("response Body:", string(body))
 
 }
+*/
