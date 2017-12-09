@@ -3,8 +3,7 @@ package main
 import (
 	"encoding/json"
 	"fmt"
-	"time"
-	//"fmt"
+	//"time
 	"github.com/gorilla/context" // To use context
 	"gopkg.in/mgo.v2"            // To interact with mongoDB
 	"gopkg.in/mgo.v2/bson"
@@ -13,6 +12,7 @@ import (
 )
 
 // for saving room and time for each subject
+/*
 type schedule struct {
 	//varname type			struct_tag
 	ID      bson.ObjectId `json:"id" bson:"_id"`
@@ -27,6 +27,29 @@ type daytime struct {
 	Day       int       `json:"day" bson:"day"` // 1~7 : Mon~Sun
 	TimeStart time.Time `json:"timestart" bson:"timestart"`
 	TimeEnd   time.Time `json:"timeend" bson:"timeend"`
+}
+*/
+
+type schedule struct {
+	//varname type			struct_tag
+	ID         bson.ObjectId `json:"id" bson:"_id"`
+	Code       string        `json:"code" bson:"code"`
+	Subject    string        `json:"subject" bson:"subject"`
+	SKS        string        `json:"sks" bson:"sks"`
+	ClassNum   string        `json:"class-num" bson:"class-number"`
+	Lecturer   []string      `json:"lecturer" bson:"lecturer"`
+	StudentAmt int           `json:"student-amount" bson:"student-amount"`
+	Daytime    []daytime     `json:"daytime" bson:"daytime"`
+}
+
+//
+type daytime struct {
+	//varname type			struct_tag
+	Day       string `json:"day" bson:"day"` // 1~7 : Mon~Sun
+	Room      string `json:"room" bson:"room"`
+	TimeStart int    `json:"timestart" bson:"timestart"`
+	TimeEnd   int    `json:"timeend" bson:"timeend"`
+	Type      string `json:"type" bson:"type"`
 }
 
 // to run MongoDB use :
@@ -136,8 +159,32 @@ func handleInsert(w http.ResponseWriter, r *http.Request) {
 	w.Write(sout)
 }
 
+func updateDB(db *mgo.Session) {
+	// How to use:
+	// 1. Insert credentials below (nim, usename, password)
+	// 2. Uncomment 'updateDB()' in main()
+	// 3. 'go run main.go dataFetch.go'
+
+	user := User{}
+	user.nim = ""
+	user.username = ""
+	user.password = ""
+
+	fmt.Println("Please wait. Data is being fetched...")
+
+	scheduleArray := fetch(user)
+
+	for _, s := range scheduleArray {
+		if err := db.DB("scheduleapp").C("schedules").Insert(&s); err != nil {
+			fmt.Println("Erorr2")
+			return
+		}
+	}
+}
+
 // Main
 func main() {
+
 	// connect to the database
 	fmt.Println("Running")
 	db, err := mgo.Dial("localhost") //mgo.Dial returns an mgo.Session
@@ -148,6 +195,9 @@ func main() {
 
 	// Adapt our handle function using withDB
 	h := Adapt(http.HandlerFunc(handle), withDB(db))
+
+	// ===ACTIVATE THIS IF YOU WANT TO UPDATE DB===
+	//updateDB(db)
 
 	// add the handler
 	http.Handle("/schedules", context.ClearHandler(h))
