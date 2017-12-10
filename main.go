@@ -109,22 +109,40 @@ func handle(w http.ResponseWriter, r *http.Request) {
 // HANDLER
 // Read
 func handleRead(w http.ResponseWriter, r *http.Request) {
-	// get db context (close is handled by adapted handler)
 	fmt.Println("Catch Read")
 
-	db := context.Get(r, "database").(*mgo.Session)
-	// load the schedules (sliced)
 	var schedules []*schedule
-	if err := db.DB("scheduleapp").C("schedules").
-		Find(nil).Sort("-ID").Limit(100).All(&schedules); err != nil {
-		http.Error(w, err.Error(), http.StatusInternalServerError)
-		return
+
+	db := context.Get(r, "database").(*mgo.Session)
+	m := queryParamDisplayHandler(r)
+
+	if len(m) > 0 {
+		// if there's querystring
+		result := schedule{}
+
+		if err := db.DB("scheduleapp").C("schedules").
+			Find(m).All(&schedules); err != nil {
+			http.Error(w, err.Error(), http.StatusInternalServerError)
+			return
+		}
+		schedules = append(schedules, &result)
+
+		fmt.Println("A")
+	} else {
+		// If there's no query string
+		if err := db.DB("scheduleapp").C("schedules").
+			Find(nil).Sort("-ID").Limit(100).All(&schedules); err != nil {
+			http.Error(w, err.Error(), http.StatusInternalServerError)
+			return
+		}
 	}
-	// write it out
+
+	// Print as JSON
 	if err := json.NewEncoder(w).Encode(schedules); err != nil {
 		http.Error(w, err.Error(), http.StatusInternalServerError)
 		return
 	}
+
 }
 
 // Insert
@@ -182,6 +200,19 @@ func updateDB(db *mgo.Session) {
 	}
 }
 
+func queryParamDisplayHandler(r *http.Request) map[string]interface{} {
+	wantParam := []string{"code", "class-num", "subject"}
+	m := make(map[string]interface{})
+
+	// format : 127.0.0.1:8080/schedules?kode=MA1101&hari=Senin
+	for _, el := range wantParam {
+		if r.FormValue(el) != "" {
+			m[el] = r.FormValue(el)
+		}
+	}
+	return m
+}
+
 // Main
 func main() {
 
@@ -194,13 +225,15 @@ func main() {
 	defer db.Close() // clean up when we’re done
 
 	// Adapt our handle function using withDB
-	h := Adapt(http.HandlerFunc(handle), withDB(db))
+	//adaptedHandler1 := Adapt(http.HandlerFunc(handle), withDB(db))
+	adaptedHandler2 := Adapt(http.HandlerFunc(handle), withDB(db))
 
 	// ===ACTIVATE THIS IF YOU WANT TO UPDATE DB===
 	//updateDB(db)
 
 	// add the handler
-	http.Handle("/schedules", context.ClearHandler(h))
+	//http.Handle("/", context.ClearHandler(adaptedHandler1))
+	http.Handle("/schedules", context.ClearHandler(adaptedHandler2))
 	//ClearHandler will clean up any memory used by the context.Set method
 	// Hint : path.Base("/id/123") and split
 	// start the server
