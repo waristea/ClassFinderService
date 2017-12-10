@@ -2,6 +2,7 @@ package main
 
 import (
 	"bytes"
+	"fmt"
 	"golang.org/x/net/html"
 	"gopkg.in/mgo.v2/bson"
 	"io"
@@ -154,6 +155,12 @@ func htmlParser(method, url string, client *http.Client, header http.Header) *ht
 	doc, err := html.Parse(b)
 	if err != nil {
 		panic("error")
+	}
+
+	if resp.StatusCode >= 400 {
+		fmt.Println(resp.StatusCode)
+		fmt.Println("Error occurred, please check your credentials or contact admin for further information.")
+		fmt.Println("*Please re-fetch after a moment. Possibly you are blocked for a while from akademik.itb.ac.id*")
 	}
 
 	return doc

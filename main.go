@@ -5,10 +5,14 @@ import (
 	"fmt"
 	//"time
 	"github.com/gorilla/context" // To use context
-	"gopkg.in/mgo.v2"            // To interact with mongoDB
+	//"golang.org/x/crypto/ssh/terminal"
+	"bufio"
+	"gopkg.in/mgo.v2" // To interact with mongoDB
 	"gopkg.in/mgo.v2/bson"
 	"log"
 	"net/http"
+	"os"
+	"strings"
 )
 
 // for saving room and time for each subject
@@ -126,8 +130,6 @@ func handleRead(w http.ResponseWriter, r *http.Request) {
 			return
 		}
 		schedules = append(schedules, &result)
-
-		fmt.Println("A")
 	} else {
 		// If there's no query string
 		if err := db.DB("scheduleapp").C("schedules").
@@ -184,14 +186,28 @@ func updateDB(db *mgo.Session) {
 	// 3. 'go run main.go dataFetch.go'
 
 	user := User{}
-	user.nim = ""
-	user.username = ""
-	user.password = ""
+
+	reader := bufio.NewReader(os.Stdin)
+	fmt.Print("Username : ")
+	user.username, _ = reader.ReadString('\n')
+	fmt.Print("NIM : ")
+	user.nim, _ = reader.ReadString('\n')
+	fmt.Print("Password : ")
+	user.password, _ = reader.ReadString('\n')
+
+	user.username = strings.Replace(user.username, "\n", "", -1)
+	user.nim = strings.Replace(user.nim, "\n", "", -1)
+	user.password = strings.Replace(user.password, "\n", "", -1)
+
+	user.username = user.username[:(len(user.username) - 1)]
+	user.nim = user.nim[:(len(user.nim) - 1)]
+	user.password = user.password[:(len(user.password) - 1)]
 
 	fmt.Println("Please wait. Data is being fetched...")
 
 	scheduleArray := fetch(user)
 
+	fmt.Println("Fetch done")
 	for _, s := range scheduleArray {
 		if err := db.DB("scheduleapp").C("schedules").Insert(&s); err != nil {
 			fmt.Println("Erorr2")
@@ -218,11 +234,17 @@ func main() {
 
 	// connect to the database
 	fmt.Println("Running")
+
 	db, err := mgo.Dial("localhost") //mgo.Dial returns an mgo.Session
 	if err != nil {
 		log.Fatal("cannot dial mongo ", err)
 	}
 	defer db.Close() // clean up when we’re done
+
+	arg := os.Args[1]
+	if arg == "fetch" {
+		updateDB(db)
+	}
 
 	// Adapt our handle function using withDB
 	//adaptedHandler1 := Adapt(http.HandlerFunc(handle), withDB(db))
