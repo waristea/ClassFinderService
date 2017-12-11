@@ -241,8 +241,13 @@ func main() {
 	}
 	defer db.Close() // clean up when we’re done
 
-	arg := os.Args[1]
-	if arg == "fetch" {
+	reader := bufio.NewReader(os.Stdin)
+	fmt.Print("Do you want to fetch? (y/n) ")
+	answer, _ := reader.ReadString('\n')
+	answer = strings.Replace(answer, "\n", "", -1)
+	answer = answer[:(len(answer) - 1)]
+
+	if (answer == "y") || (answer == "Y") || (answer == "yes") || (answer == "Yes") || (answer == "YES") {
 		updateDB(db)
 	}
 
