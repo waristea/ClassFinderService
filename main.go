@@ -235,7 +235,9 @@ func main() {
 	// connect to the database
 	fmt.Println("Running")
 
-	db, err := mgo.Dial("localhost") //mgo.Dial returns an mgo.Session
+	// mongo ds012345.mlab.com:56789/dbname -u dbuser -p dbpassword
+	//db, err := mgo.Dial("localhost") //mgo.Dial returns an mgo.Session
+	db, err := mgo.Dial("mongodb://william:william@167.205.67.251:27017/scheduleapp") //mgo.Dial returns an mgo.Session
 	if err != nil {
 		log.Fatal("cannot dial mongo ", err)
 	}
